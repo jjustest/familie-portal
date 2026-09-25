@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Familie-Portal</title>
+  <meta name="description" content="Familiens infoskærm: tid, vejr, kalender og lister.">
+  <meta name="theme-color" content="#0b1026">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Familie">
+
+  <link rel="preload" href="fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Himmel: farve og effekter følger tidspunkt og vejr -->
+  <div class="sky" aria-hidden="true">
+    <div class="sky-grad"></div>
+    <div class="sky-glow"></div>
+    <div class="sky-stars"></div>
+    <div class="sky-clouds"><i></i><i></i><i></i><i></i></div>
+    <div class="sky-rain"></div>
+    <div class="sky-snow"></div>
+  </div>
+
+  <div class="app">
+
+    <!-- ========== Sektion 1: Tid & vejr ========== -->
+    <header class="top">
+      <div class="time-block">
+        <div id="greeting" class="greeting"></div>
+        <div id="clock" class="clock">--:--</div>
+        <div class="date-line">
+          <span id="date"></span>
+          <span class="sep">·</span>
+          <span id="week-no"></span>
+        </div>
+      </div>
+
+      <div id="weather" class="weather is-loading">
+        <div id="wx-now" class="wx-now glass">
+          <div class="wx-now-text"><div class="wx-now-temp">–°</div><div class="wx-now-desc">Henter vejr…</div></div>
+        </div>
+        <ol id="wx-days" class="wx-days glass" aria-label="Vejrudsigt"></ol>
+      </div>
+    </header>
+
+    <!-- ========== Sektion 2: Kalender & i dag ========== -->
+    <main class="middle">
+      <section class="week glass" aria-labelledby="week-title">
+        <header class="section-head">
+          <h2 id="week-title">Næste 7 dage</h2>
+          <div class="week-nav">
+            <button id="event-add" type="button" class="btn-text btn-primary">+ Aftale</button>
+            <button id="week-today" type="button" class="btn-text" hidden>I dag</button>
+            <button id="week-prev" type="button" class="btn-icon" aria-label="Forrige uge">‹</button>
+            <button id="week-next" type="button" class="btn-icon" aria-label="Næste uge">›</button>
+          </div>
+        </header>
+        <div id="week-grid" class="week-grid"></div>
+        <div id="agenda" class="agenda"></div>
+      </section>
+
+      <aside class="today glass" aria-labelledby="today-title">
+        <header class="section-head">
+          <h2 id="today-title">I dag</h2>
+        </header>
+        <div id="next-up" class="next-up" hidden></div>
+        <ol id="today-list" class="today-list"></ol>
+      </aside>
+    </main>
+
+    <!-- ========== Login (vises når man ikke er logget ind) ========== -->
+    <section id="login" class="login glass" aria-labelledby="login-title">
+      <h2 id="login-title">Familie-Portal</h2>
+      <p id="login-msg">Log ind for at se familiens kalender og lister.</p>
+      <form id="login-form" autocomplete="on">
+        <label>E-mail <input type="email" name="email" autocomplete="username" required></label>
+        <label>Kodeord <input type="password" name="password" autocomplete="current-password" required></label>
+        <button type="submit" class="btn-primary btn-big">Log ind</button>
+        <p id="login-error" class="warn" role="alert"></p>
+      </form>
+      <button id="login-out" type="button" class="btn-text" hidden>Log ud</button>
+    </section>
+
+    <!-- ========== Sektion 3: Lister ========== -->
+    <footer id="lists" class="lists"></footer>
+
+    <div class="statusbar">
+      <div class="src-toggle" role="group" aria-label="Vejrkilde">
+        <button type="button" data-source="dmi">DMI</button>
+        <button type="button" data-source="yr">YR</button>
+      </div>
+      <div id="wx-credit" class="wx-credit"></div>
+      <span class="spacer"></span>
+      <span id="location" class="loc"></span>
+      <button id="account" class="account" type="button" hidden aria-label="Konto">
+        <span class="dot"></span><span class="account-name"></span>
+      </button>
+      <button id="fullscreen" class="fs-btn" type="button" aria-label="Fuld skærm" title="Fuld skærm">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== Dialog: aftale ========== -->
+  <dialog id="event-dialog" class="dlg">
+    <form method="dialog" class="dlg-form">
+      <h2>Ny aftale</h2>
+      <label class="full">Titel <input name="title" required maxlength="200" autocomplete="off"></label>
+      <label class="chk full"><input type="checkbox" name="all_day"> Hele dagen</label>
+      <label>Dato <input type="date" name="date" required></label>
+      <label class="time">Fra <input type="time" name="start" step="300"></label>
+      <label>Til dato <input type="date" name="end_date" required></label>
+      <label class="time">Til <input type="time" name="end" step="300"></label>
+      <label class="full">Hvem <select name="person_id"></select></label>
+      <label class="chk full"><input type="checkbox" name="is_private"> Privat – kun synlig for dig og den valgte person</label>
+      <label class="full">Note <textarea name="note" rows="2" maxlength="1000"></textarea></label>
+      <div class="dlg-actions full">
+        <button type="button" data-action="delete" class="btn-danger" hidden>Slet</button>
+        <span class="spacer"></span>
+        <button type="button" data-action="cancel" class="btn-text">Annuller</button>
+        <button type="submit" class="btn-primary">Gem</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ========== Dialog: liste ========== -->
+  <dialog id="list-dialog" class="dlg">
+    <form method="dialog" class="dlg-form">
+      <h2>Ny liste</h2>
+      <label class="icon-field">Ikon <input name="icon" maxlength="8" autocomplete="off"></label>
+      <label class="name-field">Navn <input name="name" required maxlength="60" autocomplete="off"></label>
+      <label class="chk full"><input type="checkbox" name="personal"> Personlig – kun synlig for mig</label>
+      <div class="dlg-actions full">
+        <button type="button" data-action="delete" class="btn-danger" hidden>Slet liste</button>
+        <button type="button" data-action="clear-done" class="btn-text" hidden>Ryd afkrydsede</button>
+        <span class="spacer"></span>
+        <button type="button" data-action="cancel" class="btn-text">Annuller</button>
+        <button type="submit" class="btn-primary">Gem</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ========== Dialog: konto ========== -->
+  <dialog id="account-dialog" class="dlg dlg-small">
+    <div class="dlg-form">
+      <h2>Konto</h2>
+      <p id="account-who" class="full"></p>
+      <div class="dlg-actions full">
+        <button type="button" data-action="logout" class="btn-danger">Log ud</button>
+        <span class="spacer"></span>
+        <button type="button" data-action="cancel" class="btn-text">Luk</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/vendor/supabase.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

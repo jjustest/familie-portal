@@ -41,13 +41,19 @@ export async function loadMembers() {
 
 // ---------- Kalender ----------
 
+const EVENT_COLS = 'id,title,starts_at,ends_at,all_day,person_id,is_private,note,created_by';
+let hasPersonIds = true;   // falsk indtil 03_personer.sql er kørt
+
 export async function loadEvents(from, to) {
-  const { data, error } = await sb
-    .from('events')
-    .select('id,title,starts_at,ends_at,all_day,person_id,is_private,note,created_by')
+  const q = cols => sb.from('events').select(cols)
     .lt('starts_at', to.toISOString())
     .gt('ends_at', from.toISOString())
     .order('starts_at');
+  let { data, error } = await q(hasPersonIds ? EVENT_COLS + ',person_ids' : EVENT_COLS);
+  if (error && /person_ids/.test(error.message)) {
+    hasPersonIds = false;
+    ({ data, error } = await q(EVENT_COLS));
+  }
   if (error) throw error;
   return data;
 }
@@ -58,7 +64,8 @@ export async function saveEvent(ev) {
     starts_at: ev.starts_at,
     ends_at: ev.ends_at,
     all_day: ev.all_day,
-    person_id: ev.person_id || null,
+    ...(hasPersonIds ? { person_ids: ev.person_ids ?? [] } : {}),
+    person_id: ev.person_ids?.[0] ?? null,   // bagudkompatibel
     is_private: !!ev.is_private,
     note: ev.note || null,
   };

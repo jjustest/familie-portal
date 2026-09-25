@@ -63,6 +63,10 @@
         <header class="section-head">
           <h2 id="week-title">Næste 7 dage</h2>
           <div class="week-nav">
+            <div id="mine-toggle" class="seg" role="group" aria-label="Vis aftaler" hidden>
+              <button type="button" data-mine="0">Alle</button>
+              <button type="button" data-mine="1">Mine</button>
+            </div>
             <button id="event-add" type="button" class="btn-text btn-primary">+ Aftale</button>
             <button id="week-today" type="button" class="btn-text" hidden>I dag</button>
             <button id="week-prev" type="button" class="btn-icon" aria-label="Forrige uge">‹</button>
@@ -125,8 +129,11 @@
       <label class="time">Fra <input type="time" name="start" step="300"></label>
       <label>Til dato <input type="date" name="end_date" required></label>
       <label class="time">Til <input type="time" name="end" step="300"></label>
-      <label class="full">Hvem <select name="person_id"></select></label>
-      <label class="chk full"><input type="checkbox" name="is_private"> Privat – kun synlig for dig og den valgte person</label>
+      <fieldset class="full people">
+        <legend>Hvem gælder det? <small>Ingen valgt = fælles</small></legend>
+        <div class="chips" id="people-chips"></div>
+      </fieldset>
+      <label class="chk full"><input type="checkbox" name="is_private"> Privat – kun synlig for dig og de markerede</label>
       <label class="full">Note <textarea name="note" rows="2" maxlength="1000"></textarea></label>
       <div class="dlg-actions full">
         <button type="button" data-action="delete" class="btn-danger" hidden>Slet</button>

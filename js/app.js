@@ -17,7 +17,8 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 const state = {
   source: store.get('weatherSource', CONFIG.weather.defaultSource),
-  weekOffset: 0,          // 0 = i dag + 6 dage frem, 1 = de næste 7 osv.
+  weekOffset: 0,
+  onlyMine: store.get('onlyMine', false),   // vis kun aftaler, hvor jeg er markeret          // 0 = i dag + 6 dage frem, 1 = de næste 7 osv.
   weather: null,
   session: null,
   me: null,               // række fra members for den indloggede
@@ -53,6 +54,32 @@ function personColor(id) {
 
 function personName(id) {
   return member(id)?.name ?? 'Fælles';
+}
+
+/** Personer markeret på en aftale (tom = fælles) */
+function evPeople(ev) {
+  const ids = ev.person_ids?.length ? ev.person_ids : (ev.person_id ? [ev.person_id] : []);
+  return ids.filter(id => member(id));
+}
+function evColor(ev) {
+  const ids = evPeople(ev);
+  return ids.length ? personColor(ids[0]) : 'var(--c-faelles)';
+}
+function evNames(ev) {
+  const ids = evPeople(ev);
+  return ids.length ? ids.map(personName).join(', ') : 'Fælles';
+}
+function evDots(ev) {
+  const ids = evPeople(ev);
+  return (ids.length ? ids : [null]).map(id => `<span class="dot" style="--dot:${personColor(id)}"></span>`).join('');
+}
+/** Er jeg markeret på aftalen? */
+function isMine(ev) {
+  return !!state.me && evPeople(ev).includes(state.me.user_id);
+}
+/** Kan "Mine aftaler" bruges? (ikke på den fælles konto) */
+function canFilterMine() {
+  return !!state.me && !state.me.is_shared;
 }
 
 // ================= Ur & dato =================
@@ -223,8 +250,12 @@ function dayKeyOf(iso) {
 }
 
 /** Aftaler der ligger på dagen `key` (også flerdagsaftaler) */
+function visibleEvents() {
+  return state.onlyMine && canFilterMine() ? state.events.filter(isMine) : state.events;
+}
+
 function eventsOn(key) {
-  return state.events
+  return visibleEvents()
     .filter(ev => {
       const s = dayKeyOf(ev.starts_at);
       // slut er "til og med" for tidsaftaler, "til" (eksklusiv) for heldagsaftaler
@@ -262,7 +293,7 @@ function renderWeek() {
   const wxByDay = new Map((state.weather?.data.days ?? []).map(d => [d.date, d]));
 
   $('#week-title').textContent = state.weekOffset === 0
-    ? 'Næste 7 dage'
+    ? (state.onlyMine && canFilterMine() ? 'Mine aftaler' : 'Næste 7 dage')
     : `${fmt(start, { day: 'numeric', month: 'short' })} – ${fmt(end, { day: 'numeric', month: 'short' })}`;
   $('#week-today').hidden = state.weekOffset === 0;
   $('#week-prev').disabled = state.weekOffset <= -8;
@@ -283,8 +314,8 @@ function renderWeek() {
         </header>
         <ul class="day-events">
           ${evs.map(ev => `
-            <li class="ev${ev.all_day ? ' ev-allday' : ''}${ev.is_private ? ' ev-private' : ''}" data-ev="${ev.id}" style="--ev:${personColor(ev.person_id)}" tabindex="0">
-              ${ev.all_day ? '' : `<span class="ev-time">${evTimeLabel(ev, key)}${ev.person_id ? ` · ${esc(personName(ev.person_id))}` : ''}</span>`}
+            <li class="ev${ev.all_day ? ' ev-allday' : ''}${ev.is_private ? ' ev-private' : ''}" data-ev="${ev.id}" style="--ev:${evColor(ev)}" tabindex="0">
+              ${ev.all_day ? '' : `<span class="ev-time">${evTimeLabel(ev, key)}${evPeople(ev).length ? ` · ${esc(evNames(ev))}` : ''}</span>`}
               <span class="ev-title">${ev.is_private ? '🔒 ' : ''}${esc(ev.title)}</span>
             </li>`).join('')}
           ${evs.length ? '' : '<li class="day-empty">Fri</li>'}
@@ -308,7 +339,7 @@ function renderNextUp() {
   const el = $('#next-up');
   const now = new Date();
   const todayKey = dateKey(now);
-  const upcoming = state.events
+  const upcoming = visibleEvents()
     .filter(ev => !ev.all_day && new Date(ev.ends_at) > now)
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const ev = upcoming[0];
@@ -330,12 +361,12 @@ function renderNextUp() {
   else when = relTime(start - now) ?? (key === todayKey ? timeHM(start) : `${dayLabel(start, todayKey)} ${timeHM(start)}`);
   if (running) el.classList.add('is-now');
   el.dataset.ev = ev.id;
-  el.style.setProperty('--ev', personColor(ev.person_id));
+  el.style.setProperty('--ev', evColor(ev));
   el.innerHTML = `
     <div class="next-label">${running ? 'I gang' : 'Næste'}</div>
     <div class="next-when">${when}</div>
     <div class="next-title">${ev.is_private ? '🔒 ' : ''}${esc(ev.title)}</div>
-    <div class="next-meta"><span class="dot" style="--dot:${personColor(ev.person_id)}"></span>${esc(personName(ev.person_id))} · ${timeHM(start)}–${timeHM(end)}${running ? ` · slutter ${timeHM(end)}` : ''}</div>`;
+    <div class="next-meta">${evDots(ev)}${esc(evNames(ev))} · ${timeHM(start)}–${timeHM(end)}${running ? ` · slutter ${timeHM(end)}` : ''}</div>`;
 }
 
 function renderToday() {
@@ -368,7 +399,7 @@ function renderToday() {
         <span class="today-time">${time}</span>
         <span class="today-body">
           <span class="today-title">${ev.is_private ? '🔒 ' : ''}${esc(ev.title)}</span>
-          <span class="today-who"><span class="dot" style="--dot:${personColor(ev.person_id)}"></span>${esc(personName(ev.person_id))}</span>
+          <span class="today-who">${evDots(ev)}${esc(evNames(ev))}</span>
         </span>
       </li>`;
   }).join('');
@@ -377,7 +408,7 @@ function renderToday() {
 function renderAgenda() {
   const now = new Date();
   let html = '';
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 7; i++) {
     const day = addDays(fromKey(dateKey(now)), i);
     const key = dateKey(day);
     const evs = eventsOn(key);
@@ -388,7 +419,7 @@ function renderAgenda() {
           <button type="button" class="day-add" data-add-day="${key}" aria-label="Ny aftale">+</button></h3>
         <ul>
           ${evs.length ? evs.map(ev => `
-            <li data-ev="${ev.id}" style="--ev:${personColor(ev.person_id)}" tabindex="0">
+            <li data-ev="${ev.id}" style="--ev:${evColor(ev)}" tabindex="0">
               <span class="ev-time">${evTimeLabel(ev, key)}</span>
               <span class="ev-title">${ev.is_private ? '🔒 ' : ''}${esc(ev.title)}</span>
             </li>`).join('') : '<li class="empty">Ingen aftaler</li>'}
@@ -398,7 +429,14 @@ function renderAgenda() {
   $('#agenda').innerHTML = html;
 }
 
+function renderMineToggle() {
+  const t = $('#mine-toggle');
+  t.hidden = !canFilterMine();
+  t.querySelectorAll('[data-mine]').forEach(b => b.classList.toggle('on', (b.dataset.mine === '1') === !!state.onlyMine));
+}
+
 function renderCalendar() {
+  renderMineToggle();
   renderWeek();
   renderNextUp();
   renderToday();
@@ -425,9 +463,12 @@ function openEventDialog(ev = null, dayKey = null) {
   dlg.querySelector('h2').textContent = ev ? 'Ret aftale' : 'Ny aftale';
 
   // personer
-  f.person_id.innerHTML = '<option value="">Fælles</option>' +
-    state.members.filter(m => !m.is_shared)
-      .map(m => `<option value="${m.user_id}">${esc(m.name)}</option>`).join('');
+  const tagged = ev ? evPeople(ev) : (canFilterMine() && state.onlyMine ? [state.me.user_id] : []);
+  $('#people-chips').innerHTML = state.members.filter(m => !m.is_shared).map(m => `
+    <label class="chip" style="--chip:${m.color}">
+      <input type="checkbox" name="people" value="${m.user_id}" ${tagged.includes(m.user_id) ? 'checked' : ''}>
+      <span>${esc(m.name)}</span>
+    </label>`).join('') || '<span class="hint">Ingen personer oprettet endnu</span>';
 
   let start, end;
   if (ev) {
@@ -448,7 +489,6 @@ function openEventDialog(ev = null, dayKey = null) {
   f.all_day.checked = ev?.all_day ?? false;
   f.start.value = hm(start);
   f.end.value = hm(end);
-  f.person_id.value = ev?.person_id ?? '';
   f.is_private.checked = ev?.is_private ?? false;
   f.note.value = ev?.note ?? '';
   syncAllDay(f);
@@ -529,7 +569,7 @@ function initEventDialog() {
         starts_at: starts.toISOString(),
         ends_at: ends.toISOString(),
         all_day: allDay,
-        person_id: f.person_id.value || null,
+        person_ids: [...f.querySelectorAll('input[name=people]:checked')].map(x => x.value),
         is_private: f.is_private.checked,
         note: f.note.value.trim(),
       });
@@ -547,6 +587,13 @@ function initCalendar() {
   $('#week-prev').addEventListener('click', () => changeWeek(-1));
   $('#week-next').addEventListener('click', () => changeWeek(1));
   $('#week-today').addEventListener('click', () => changeWeek(0));
+  $('#mine-toggle').addEventListener('click', e => {
+    const b = e.target.closest('[data-mine]');
+    if (!b) return;
+    state.onlyMine = b.dataset.mine === '1';
+    store.set('onlyMine', state.onlyMine);
+    renderCalendar();
+  });
   $('#event-add').addEventListener('click', () => openEventDialog());
 
   const openFromClick = e => {

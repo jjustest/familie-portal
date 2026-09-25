@@ -624,6 +624,42 @@ body:not(.signed-out) .login { display: none; }
 .toast.error { border-color: var(--danger); }
 .toast.ok { border-color: var(--ok); }
 
+/* ================= Markér personer + "Mine" ================= */
+.people { border: 0; padding: 0; margin: 0; min-width: 0; }
+.people legend { font-size: .85rem; color: var(--muted); padding: 0; margin-bottom: 8px; }
+.people legend small { color: var(--faint); margin-left: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px 8px 10px; min-height: 40px;
+  border-radius: 999px; border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, .05); color: var(--muted); font-size: .95rem;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.chip span::before {
+  content: ""; width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--chip); box-sizing: border-box;
+}
+.chip input:checked + span {
+  background: color-mix(in srgb, var(--chip) 25%, transparent);
+  border-color: var(--chip); color: var(--text);
+}
+.chip input:checked + span::before { background: var(--chip); }
+.chip input:focus-visible + span { outline: 2px solid var(--accent); }
+
+.seg {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: rgba(255, 255, 255, .05);
+}
+.seg button {
+  border: 0; background: transparent; color: var(--muted);
+  padding: 0 14px; min-height: 36px; font-size: .88rem; font-weight: 500;
+}
+.seg button.on { background: rgba(255, 255, 255, .9); color: #0b1733; }
+.next-meta .dot + .dot, .today-who .dot + .dot { margin-left: -3px; }
+
 /* ================= Burger-menu (kun mobil) ================= */
 .menu-btn {
   display: none;

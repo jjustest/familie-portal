@@ -22,7 +22,7 @@ export function demoEvents(now = new Date()) {
       const [sh, sm] = start.split(':').map(Number), [eh, em] = end.split(':').map(Number);
       s.setHours(sh, sm, 0, 0); e.setHours(eh, em, 0, 0);
     }
-    return { id: `demo${n++}`, title, starts_at: s.toISOString(), ends_at: e.toISOString(), all_day, person_id, is_private: false, note: null };
+    return { id: `demo${n++}`, title, starts_at: s.toISOString(), ends_at: e.toISOString(), all_day, person_id, person_ids: person_id ? [person_id] : [], is_private: false, note: null };
   };
   const h = now.getHours();
   const soon = `${String(Math.min(h + 1, 22)).padStart(2, '0')}:00`;
@@ -35,6 +35,7 @@ export function demoEvents(now = new Date()) {
     ev(1, 'Loppemarked', '10:00', '13:00'),
     ev(1, 'Aftensmad hos mormor', '17:30', '21:00'),
     ev(2, 'Fodbold', '16:30', '17:45', 'p3'),
+    { ...ev(4, 'Tandlæge – begge piger', '14:00', '15:00'), person_ids: ['p3', 'p4'] },
     ev(2, 'Madpakker – husk kage', '', '', null, true),
     ev(3, 'Tandlæge', '08:15', '09:00', 'p4'),
     ev(3, 'Forældremøde', '19:00', '20:30', 'p2'),
@@ -75,7 +76,8 @@ export function createDemoApi() {
   let lists = demoLists();
   const id = () => `d${Math.random().toString(36).slice(2, 9)}`;
   const clone = x => JSON.parse(JSON.stringify(x));
-  const session = { user: { id: 'fam', email: 'demo@familie' } };
+  const as = new URLSearchParams(location.search).get('as') || 'fam';   // ?demo&as=p3 = vis som Emma
+  const session = { user: { id: as, email: `${as}@demo` } };
   return {
     onAuthChange: cb => setTimeout(() => cb(session), 0),
     signIn: async () => {}, signOut: async () => {},

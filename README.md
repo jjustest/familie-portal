@@ -18,6 +18,7 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 | `js/vendor/supabase.js` | Supabase-biblioteket (v2), lagt lokalt så appen ikke afhænger af et CDN |
 | `supabase/01_schema.sql` | Tabeller, sikkerhedsregler (RLS) og realtid. Køres i Supabase → SQL Editor |
 | `supabase/02_members.sql` | Knytter brugerkonti til familien (navn, farve) |
+| `supabase/03_personer.sql` | Flere personer pr. aftale + "Mine aftaler" |
 | `js/app.js` | Ur, visning, ugeskift, lister, skærmlås-forhindring, fuld skærm |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Gør appen installerbar (PWA) |
 
@@ -26,6 +27,7 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 2. Authentication → Sign In / Providers → slå **Allow new users to sign up** fra.
 3. Authentication → Users → **Add user** for hver person + én fælles konto til infoskærmen (sæt "Auto Confirm User").
 4. Ret e-mails/navne/farver i `supabase/02_members.sql` og kør den.
+5. Kør `supabase/03_personer.sql`.
 
 Kun konti i tabellen `members` kan se eller ændre noget. Private aftaler og personlige lister ses kun af ejeren.
 

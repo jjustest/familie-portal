@@ -30,6 +30,11 @@
     <div class="sky-snow"></div>
   </div>
 
+  <!-- Mobil: burger-menu -->
+  <button id="menu-btn" class="menu-btn" type="button" aria-label="Menu" aria-haspopup="dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+
   <div class="app">
 
     <!-- ========== Sektion 1: Tid & vejr ========== -->
@@ -160,6 +165,26 @@
         <button type="button" data-action="cancel" class="btn-text">Luk</button>
       </div>
     </div>
+  </dialog>
+
+  <!-- ========== Dialog: menu (mobil) ========== -->
+  <dialog id="menu-dialog" class="dlg menu-sheet" aria-label="Menu">
+    <nav class="menu-list" id="menu-list"></nav>
+  </dialog>
+
+  <!-- ========== Dialog: hurtig tilføj til liste ========== -->
+  <dialog id="item-dialog" class="dlg dlg-small">
+    <form method="dialog" class="dlg-form">
+      <h2>Tilføj til liste</h2>
+      <label class="full">Liste <select name="list_id"></select></label>
+      <label class="full">Hvad <input name="text" required maxlength="200" autocomplete="off" enterkeyhint="done"></label>
+      <p class="full hint">Tryk Enter for at tilføje flere i træk.</p>
+      <div class="dlg-actions full">
+        <span class="spacer"></span>
+        <button type="button" data-action="cancel" class="btn-text">Luk</button>
+        <button type="submit" class="btn-primary">Tilføj</button>
+      </div>
+    </form>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

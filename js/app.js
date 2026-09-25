@@ -864,6 +864,88 @@ function registerSW() {
   }
 }
 
+
+// ================= Mobil-menu =================
+
+function openMenu() {
+  const dlg = $('#menu-dialog');
+  const listItems = state.lists.map(l => `
+    <button type="button" class="menu-item" data-menu="add-item" data-list="${l.id}">
+      <span class="mi-icon">${esc(l.icon)}</span>
+      <span>Tilføj til ${esc(l.name)}<small>${l.items.filter(i => !i.done).length} på listen</small></span>
+    </button>`).join('');
+  $('#menu-list').innerHTML = `
+    <button type="button" class="menu-item primary" data-menu="event">
+      <span class="mi-icon">+</span><span>Ny aftale</span>
+    </button>
+    ${listItems}
+    <button type="button" class="menu-item" data-menu="new-list">
+      <span class="mi-icon">📝</span><span>Ny liste</span>
+    </button>
+    <div class="menu-group">Gå til</div>
+    <button type="button" class="menu-item" data-menu="goto" data-target=".week">
+      <span class="mi-icon">📅</span><span>Kalender</span>
+    </button>
+    <button type="button" class="menu-item" data-menu="goto" data-target="#lists">
+      <span class="mi-icon">✅</span><span>Lister</span>
+    </button>
+    <div class="menu-group">Konto</div>
+    <button type="button" class="menu-item" data-menu="account">
+      <span class="mi-icon"><span class="dot" style="--dot:${state.me?.color ?? 'var(--muted)'}"></span></span>
+      <span>${esc(state.me?.name ?? '')}<small>${esc(state.session?.user.email ?? '')}</small></span>
+    </button>`;
+  dlg.showModal();
+}
+
+function openItemDialog(listId) {
+  const dlg = $('#item-dialog');
+  const f = dlg.querySelector('form');
+  f.reset();
+  f.list_id.innerHTML = state.lists.map(l => `<option value="${l.id}">${esc(l.icon)} ${esc(l.name)}</option>`).join('');
+  if (listId) f.list_id.value = listId;
+  f.querySelector('.hint').textContent = 'Tryk Enter for at tilføje flere i træk.';
+  dlg.showModal();
+  f.text.focus();
+}
+
+function initMenu() {
+  const dlg = $('#menu-dialog');
+  $('#menu-btn').addEventListener('click', openMenu);
+  // luk ved tryk udenfor
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  $('#menu-list').addEventListener('click', e => {
+    const b = e.target.closest('[data-menu]');
+    if (!b) return;
+    dlg.close();
+    switch (b.dataset.menu) {
+      case 'event': openEventDialog(); break;
+      case 'add-item': openItemDialog(b.dataset.list); break;
+      case 'new-list': openListDialog(); break;
+      case 'goto': $(b.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+      case 'account': $('#account').click(); break;
+    }
+  });
+
+  const idlg = $('#item-dialog');
+  const f = idlg.querySelector('form');
+  idlg.querySelector('[data-action=cancel]').addEventListener('click', () => idlg.close());
+  idlg.addEventListener('click', e => { if (e.target === idlg) idlg.close(); });
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = f.text.value.trim();
+    if (!text) return;
+    const listId = f.list_id.value;
+    f.text.value = '';
+    f.text.focus();
+    try {
+      await db.addItem(listId, text);
+      const l = state.lists.find(x => x.id === listId);
+      f.querySelector('.hint').textContent = `✓ Tilføjet til ${l?.name ?? 'listen'}: ${text}`;
+      await refreshLists();
+    } catch (err) { fail(err, 'Kunne ikke tilføje'); }
+  });
+}
+
 // ================= Start =================
 
 $('#location').textContent = CONFIG.location.name;
@@ -873,5 +955,6 @@ initWeather();
 initCalendar();
 initLists();
 initAuth();
+initMenu();
 initKiosk();
 registerSW();

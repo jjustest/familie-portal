@@ -86,12 +86,16 @@ export async function deleteEvent(id) {
 
 // ---------- Lister ----------
 
+const LIST_COLS = 'id,name,icon,sort,owner_id,list_items(id,text,done,done_at,created_at)';
+let hasListOwner = true;   // falsk indtil 05_ejerskab.sql er kørt
+
 export async function loadLists() {
-  const { data, error } = await sb
-    .from('lists')
-    .select('id,name,icon,sort,owner_id,list_items(id,text,done,done_at,created_at)')
-    .order('sort')
-    .order('created_at');
+  const q = cols => sb.from('lists').select(cols).order('sort').order('created_at');
+  let { data, error } = await q(hasListOwner ? LIST_COLS + ',created_by' : LIST_COLS);
+  if (error && /created_by/.test(error.message)) {
+    hasListOwner = false;
+    ({ data, error } = await q(LIST_COLS));
+  }
   if (error) throw error;
   for (const l of data) {
     l.items = (l.list_items ?? []).sort((a, b) => b.created_at.localeCompare(a.created_at));

@@ -22,7 +22,7 @@ export function demoEvents(now = new Date()) {
       const [sh, sm] = start.split(':').map(Number), [eh, em] = end.split(':').map(Number);
       s.setHours(sh, sm, 0, 0); e.setHours(eh, em, 0, 0);
     }
-    return { id: `demo${n++}`, title, starts_at: s.toISOString(), ends_at: e.toISOString(), all_day, person_id, person_ids: person_id ? [person_id] : [], is_private: false, note: null };
+    return { id: `demo${n++}`, title, starts_at: s.toISOString(), ends_at: e.toISOString(), all_day, person_id, person_ids: person_id ? [person_id] : [], is_private: false, note: null, created_by: 'p2' };
   };
   const h = now.getHours();
   const soon = `${String(Math.min(h + 1, 22)).padStart(2, '0')}:00`;

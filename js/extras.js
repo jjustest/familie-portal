@@ -138,6 +138,12 @@ function scoreHTML(parent) {
         </div>`;
       }).join('')}
     </div>
+    <h3 class="sub">Sådan tjener du point</h3>
+    <div class="chore-list">
+      ${(pd().chores ?? []).map(ch => `
+        <div class="chore-item"><span class="chore-icon">${C.esc(ch.icon)}</span>
+          <span class="chore-title">${C.esc(ch.title)}</span><b>+${ch.points}</b></div>`).join('') || '<p class="hint">Ingen opgaver endnu.</p>'}
+    </div>
     <h3 class="sub">Seneste</h3>
     <ul class="history">
       ${history.length ? history.map(p => {

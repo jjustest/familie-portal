@@ -140,7 +140,7 @@ const FETCHERS = { dmi: fetchDmi, yr: fetchYr };
  * og falder tilbage til gemt (evt. gammel) kopi hvis nettet fejler.
  */
 export async function getWeather(source, { force = false } = {}) {
-  const cacheKey = `weather:${source}`;
+  const cacheKey = `weather:${source}:${CONFIG.location.id ?? 'hjem'}`;
   const cached = store.get(cacheKey);
   const maxAge = CONFIG.weather.refreshMinutes * 60e3;
 

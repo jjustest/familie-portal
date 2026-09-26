@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG, LOCATIONS, setLocation } from './config.js';
 import { getWeather, SOURCES } from './weather.js';
 import { weatherIcon, DESCRIPTIONS } from './icons.js';
 import * as realDb from './db.js';
@@ -498,7 +498,8 @@ function openEventDialog(ev = null, dayKey = null) {
   syncAllDay(f);
 
   const del = dlg.querySelector('[data-action=delete]');
-  del.hidden = !ev;
+  // Kun den der har oprettet aftalen, kan slette den
+  del.hidden = !ev || (ev.created_by && ev.created_by !== state.session?.user.id);
   del.textContent = 'Slet';
   del.classList.remove('confirm');
 
@@ -689,7 +690,9 @@ function openListDialog(list = null) {
   const hasDone = list?.items.some(i => i.done);
   dlg.querySelector('[data-action=clear-done]').hidden = !hasDone;
   const del = dlg.querySelector('[data-action=delete]');
-  del.hidden = !list;
+  // Kun den der har oprettet listen, kan slette den (gamle lister uden ejer: forældre)
+  const myId = state.session?.user.id;
+  del.hidden = !list || !(list.created_by ? list.created_by === myId : state.me?.role === 'parent');
   del.textContent = 'Slet liste';
   del.classList.remove('confirm');
   dlg.showModal();
@@ -1023,7 +1026,23 @@ function initMenu() {
 
 // ================= Start =================
 
-$('#location').textContent = CONFIG.location.name;
+function renderLocation() {
+  $('#location').textContent = CONFIG.location.name;
+  $('#loc-switch').innerHTML = LOCATIONS.map(l => `
+    <button type="button" data-loc="${l.id}" class="${l.id === CONFIG.location.id ? 'on' : ''}" title="${esc(l.name)}">
+      <span aria-hidden="true">${l.icon}</span> ${esc(l.label)}
+    </button>`).join('');
+}
+renderLocation();
+$('#loc-switch').addEventListener('click', e => {
+  const b = e.target.closest('[data-loc]');
+  if (!b || b.dataset.loc === CONFIG.location.id) return;
+  setLocation(b.dataset.loc);
+  renderLocation();
+  $('#weather').classList.add('is-loading');
+  loadWeather();          // vejr + himmel for det nye sted
+  toast(`Vejr for ${CONFIG.location.name}`, 'ok');
+});
 document.body.classList.add('signed-out');
 startClock();
 initWeather();

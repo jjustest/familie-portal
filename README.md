@@ -11,7 +11,7 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 |---|---|
 | `index.html` | Sidens opbygning: top (tid + vejr), midte (uge + i dag), bund (lister) |
 | `css/style.css` | Layout: infoskærm (landscape ≥ 900 px, ingen scroll), tablet på højkant og mobil |
-| `js/config.js` | **Indstillinger**: by, koordinater, standard-vejrkilde, antal dage |
+| `js/config.js` | **Indstillinger**: steder (Hjemme/Sommerhus), standard-vejrkilde, antal dage |
 | `js/weather.js` | Henter vejr fra DMI (Open-Meteo, model `dmi_seamless`) og Yr (api.met.no) |
 | `js/icons.js` | Egne vejrikoner + oversættelse af DMI/Yr-vejrkoder |
 | `js/db.js` | Supabase: login, kalender, lister og realtid |
@@ -20,6 +20,8 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 | `supabase/02_members.sql` | Knytter brugerkonti til familien (navn, farve) |
 | `supabase/03_personer.sql` | Flere personer pr. aftale + "Mine aftaler" |
 | `supabase/04_point_og_info.sql` | Roller (forælder/barn), pokaler, point, bonusser og Info-kort |
+| `supabase/05_ejerskab.sql` | Kun opretteren kan slette lister og aftaler |
+| `js/lock.js` | Forælder-lås (fingeraftryk / kodeord) |
 | `js/extras.js` | Pokaler og Info (visning og dialoger) |
 | `js/app.js` | Ur, visning, ugeskift, lister, skærmlås-forhindring, fuld skærm |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Gør appen installerbar (PWA) |
@@ -31,6 +33,7 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 4. Ret e-mails/navne/farver i `supabase/02_members.sql` og kør den.
 5. Kør `supabase/03_personer.sql`.
 6. Kør `supabase/04_point_og_info.sql` (sætter Far og Mor som forældre).
+7. Kør `supabase/05_ejerskab.sql`.
 
 Kun konti i tabellen `members` kan se eller ændre noget. Private aftaler og personlige lister ses kun af ejeren.
 

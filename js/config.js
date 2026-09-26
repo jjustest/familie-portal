@@ -2,7 +2,7 @@
 // Steder man kan skifte mellem (øverst ved uret). Koordinater: højst 4 decimaler (met.no).
 export const LOCATIONS = [
   { id: 'hjem',      label: 'Hjemme',    icon: '🏠', name: 'Hornslet',        lat: 56.3183, lon: 10.3203 },
-  { id: 'sommerhus', label: 'Sommerhus', icon: '🏖️', name: 'Dragsmur Strand', lat: 56.1540, lon: 10.5370 },
+  { id: 'sommerhus', label: 'Sommerhus', icon: '🏖️', name: 'Dragsmur Strand', lat: 56.1698, lon: 10.5352 },   // samme punkt som Yr (2-11102451)
 ];
 
 function savedLocation() {

@@ -138,10 +138,10 @@ select * from (values
   ('Støvsugning',              20, '🧹', 1),
   ('Opvask',                   15, '🍽️', 2),
   ('Tømme opvaskemaskine',     10, '🫧', 3),
-  ('Gå tur med hunden',        10, '🐕', 4),
-  ('Rydde op på værelset',     15, '🧸', 5),
-  ('Tage skraldet ud',          5, '🗑️', 6),
-  ('Dække bord',                5, '🍴', 7)
+  ('Gå tur med en hund',       10, '🐕', 4),
+  ('Rydde op i stuen',         15, '🛋️', 5),
+  ('Tage skraldet ud',         10, '🗑️', 6),
+  ('Hænge vasketøj op',        15, '👕', 7)
 ) v(title, points, icon, sort)
 where not exists (select 1 from public.chores);
 

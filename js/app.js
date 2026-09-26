@@ -1005,3 +1005,16 @@ initAuth();
 initMenu();
 initKiosk();
 registerSW();
+
+// Fjern opstartsskærmen, når siden er klar (mindst ~0,8 sek. så navnet kan nås at læses)
+const splashStart = performance.now();
+function hideSplash() {
+  const wait = Math.max(0, 800 - (performance.now() - splashStart));
+  setTimeout(() => {
+    const el = $('#splash');
+    el?.classList.add('hide');
+    setTimeout(() => el?.remove(), 600);
+  }, wait);
+}
+if (document.readyState === 'complete') hideSplash();
+else window.addEventListener('load', hideSplash, { once: true });

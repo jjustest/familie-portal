@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Familie-Portal</title>
+  <title>Just/Nordtorp</title>
   <meta name="description" content="Familiens infoskærm: tid, vejr, kalender og lister.">
   <meta name="theme-color" content="#0b1026">
 
@@ -14,12 +14,18 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Familie">
+  <meta name="apple-mobile-web-app-title" content="Just/Nordtorp">
 
   <link rel="preload" href="fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- Opstartsskærm: vises mens appen loader -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <img src="icons/icon.svg" alt="" width="96" height="96">
+    <div class="splash-name">Just<span>/</span>Nordtorp</div>
+    <div class="splash-sub">Familie-Portal</div>
+  </div>
   <!-- Himmel: farve og effekter følger tidspunkt og vejr -->
   <div class="sky" aria-hidden="true">
     <div class="sky-grad"></div>
@@ -88,7 +94,7 @@
 
     <!-- ========== Login (vises når man ikke er logget ind) ========== -->
     <section id="login" class="login glass" aria-labelledby="login-title">
-      <h2 id="login-title">Familie-Portal</h2>
+      <h2 id="login-title">Just/Nordtorp</h2>
       <p id="login-msg">Log ind for at se familiens kalender og lister.</p>
       <form id="login-form" autocomplete="on">
         <label>E-mail <input type="email" name="email" autocomplete="username" required></label>

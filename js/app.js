@@ -173,7 +173,7 @@ function renderWeather({ data, stale }) {
     const top = ((hi - d.max) / span) * 100;
     const height = Math.max(6, ((d.max - d.min) / span) * 100);
     return `
-      <li class="wx-day${d.date === todayKey ? ' is-today' : ''}">
+      <li class="wx-day${d.date === todayKey ? ' is-today' : ''}" data-wday="${d.date}" tabindex="0" title="Se hele dagen">
         <span class="wx-day-name">${label}</span>
         ${weatherIcon(d.kind, false)}
         <span class="wx-day-max">${r0(d.max)}°</span>
@@ -196,7 +196,7 @@ async function loadWeather(force = false) {
   const src = state.source;
   try {
     const result = await getWeather(src, { force });
-    if (src === state.source) { state.weather = result; renderWeather(result); }
+    if (src === state.source) { state.weather = result; renderWeather(result); renderWeatherDialog(); }
   } catch {
     if (src !== state.source) return;
     $('#weather').classList.add('is-error');
@@ -217,6 +217,107 @@ function initWeather() {
   });
   loadWeather();
   setInterval(() => loadWeather(true), CONFIG.weather.refreshMinutes * 60e3);
+}
+
+
+// ================= Vejr: hele dagen =================
+
+const COMPASS = ['N', 'NNØ', 'NØ', 'ØNØ', 'Ø', 'ØSØ', 'SØ', 'SSØ', 'S', 'SSV', 'SV', 'VSV', 'V', 'VNV', 'NV', 'NNV'];
+const compass = deg => COMPASS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+const windArrow = deg => deg == null ? '' :
+  `<svg class="warrow" viewBox="0 0 24 24" style="transform:rotate(${deg + 180}deg)" aria-hidden="true"><path d="M12 3l5 9h-4v9h-2v-9H7z"/></svg>`;
+const dur = ms => { const m = Math.round(ms / 60e3); return `${Math.floor(m / 60)} t ${m % 60} min`; };
+
+let wxDay = null;
+
+function renderWeatherDialog() {
+  const dlg = $('#weather-dialog');
+  if (!dlg.open || !state.weather) return;
+  const { data } = state.weather;
+  const todayKey = dateKey(new Date());
+  const days = data.days;
+  if (!days.some(d => d.date === wxDay)) wxDay = days[0]?.date;
+  const d = days.find(x => x.date === wxDay);
+  const date = fromKey(wxDay);
+
+  // Sol: længde og ændring fra i går
+  const sun = sunInfo(date);
+  const prev = sunInfo(addDays(date, -1));
+  const len = sun.sunset - sun.sunrise;
+  const diff = Math.round((len - (prev.sunset - prev.sunrise)) / 60e3);
+  const diffTxt = diff === 0 ? 'samme som i går' : `${Math.abs(diff)} min ${diff > 0 ? 'længere' : 'kortere'} end i går`;
+
+  $('#wx-title').textContent = `Vejret · ${CONFIG.location.name}`;
+  $('#wx-daytabs').innerHTML = days.map(x => {
+    const lbl = x.date === todayKey ? 'I dag' : cap(fmt(fromKey(x.date), { weekday: 'short' }).replace('.', ''));
+    return `<button type="button" data-wtab="${x.date}" class="${x.date === wxDay ? 'on' : ''}">
+      <span>${lbl}</span>${weatherIcon(x.kind)}<b>${r0(x.max)}°</b></button>`;
+  }).join('');
+
+  const uv = d?.uv != null ? ` · UV maks <span class="uv uv-${d.uv < 3 ? 'lav' : d.uv < 6 ? 'mid' : 'hoj'}">${String(d.uv).replace('.', ',')}</span>` : '';
+  $('#wx-summary').innerHTML = `
+    <h3>${cap(fmt(date, { weekday: 'long', day: 'numeric', month: 'long' }))}</h3>
+    <p>🌅 ${timeHM(sun.sunrise)} &nbsp; 🌇 ${timeHM(sun.sunset)} · Dagen er ${dur(len)} (${diffTxt})${uv}</p>`;
+
+  // Timer for dagen (i dag: fra indeværende time)
+  const now = Date.now();
+  const hours = (data.hours ?? []).filter(h => dateKey(new Date(h.time)) === wxDay &&
+    (wxDay !== todayKey || new Date(h.time).getTime() + h.step * 3600e3 > now));
+
+  // Sol op/ned som markeringer mellem timerne
+  const marks = [
+    { t: sun.sunrise, html: `<tr class="sun-mark"><td>${timeHM(sun.sunrise)}</td><td colspan="5">🌅 Solopgang</td></tr>` },
+    { t: sun.sunset, html: `<tr class="sun-mark"><td>${timeHM(sun.sunset)}</td><td colspan="5">🌇 Solnedgang</td></tr>` },
+  ].filter(m => wxDay !== todayKey || m.t.getTime() > now);
+
+  let rows = '';
+  for (const h of hours) {
+    const t = new Date(h.time);
+    const end = new Date(t.getTime() + h.step * 3600e3);
+    for (const m of marks.filter(m => !m.done && m.t < t)) { rows += m.html; m.done = true; }
+    const label = h.step === 1 ? timeHM(t).slice(0, 2) : `${timeHM(t).slice(0, 2)}–${timeHM(end).slice(0, 2)}`;
+    rows += `<tr>
+      <td class="w-time">${label}</td>
+      <td class="w-icon">${weatherIcon(h.kind, h.night)}</td>
+      <td class="w-temp"><b style="color:${tempColor(h.temp)}">${r0(h.temp)}°</b>${h.feels != null ? ` <small>(${r0(h.feels)}°)</small>` : ''}</td>
+      <td class="w-rain">${h.precip >= 0.1 ? `${mm(h.precip)} mm` : ''}</td>
+      <td class="w-wind">${windArrow(h.dir)} ${r0(h.wind)}${h.gust != null ? ` <small>(${r0(h.gust)})</small>` : ''} <small class="w-dir">${h.dir != null ? compass(h.dir) : ''}</small></td>
+      <td class="w-hum">${h.humidity != null ? `${r0(h.humidity)}%` : ''}</td>
+    </tr>`;
+  }
+  for (const m of marks.filter(m => !m.done)) rows += m.html;
+
+  $('#wx-table').innerHTML = hours.length ? `
+    <thead><tr><th>Tid</th><th></th><th>Temp <small>(føles)</small></th><th>Nedbør</th><th>Vind m/s <small>(stød)</small></th><th class="w-hum">Fugt</th></tr></thead>
+    <tbody>${rows}</tbody>` : '<tbody><tr><td class="empty">Ingen timedata for denne dag.</td></tr></tbody>';
+  const src = SOURCES[data.source];
+  $('#wx-foot').innerHTML = `Kilde: ${src.credit}${data.source === 'yr' && hours.some(h => h.step === 6) ? ' · Længere ude i tiden kommer Yr kun med 6-timers intervaller' : ''}`;
+}
+
+function openWeatherDay(key) {
+  if (!state.weather) return;
+  wxDay = key || dateKey(new Date());
+  $('#weather-dialog').showModal();
+  renderWeatherDialog();
+  $('#wx-table-wrap').scrollTop = 0;
+}
+
+function initWeatherDialog() {
+  const dlg = $('#weather-dialog');
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  $('#wx-close').addEventListener('click', () => dlg.close());
+  $('#wx-daytabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-wtab]');
+    if (b) { wxDay = b.dataset.wtab; renderWeatherDialog(); $('#wx-table-wrap').scrollTop = 0; }
+  });
+  const open = e => {
+    const d = e.target.closest('[data-wday]');
+    if (d) { e.stopPropagation(); openWeatherDay(d.dataset.wday); return; }
+    if (e.target.closest('#wx-now')) openWeatherDay();
+  };
+  $('#weather').addEventListener('click', open);
+  $('#week-grid').addEventListener('click', open, true);
+  $('#weather').addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
 }
 
 // ================= Kalender: data =================
@@ -314,7 +415,7 @@ function renderWeek() {
         <header class="day-head">
           <span class="day-name">${dayLabel(day, todayKey)}</span>
           <span class="day-date">${fmt(day, { day: 'numeric', month: 'short' })}</span>
-          ${wx ? `<span class="day-wx" title="${DESCRIPTIONS[wx.kind] ?? ''}">${weatherIcon(wx.kind)}<span><b>${r0(wx.max)}°</b> ${r0(wx.min)}°</span></span>` : ''}
+          ${wx ? `<span class="day-wx" data-wday="${key}" title="${DESCRIPTIONS[wx.kind] ?? ''}">${weatherIcon(wx.kind)}<span><b>${r0(wx.max)}°</b> ${r0(wx.min)}°</span></span>` : ''}
         </header>
         <ul class="day-events">
           ${evs.map(ev => `
@@ -1046,6 +1147,7 @@ $('#loc-switch').addEventListener('click', e => {
 document.body.classList.add('signed-out');
 startClock();
 initWeather();
+initWeatherDialog();
 initCalendar();
 initLists();
 initLock({ state, db, $, toast });

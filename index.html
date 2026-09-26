@@ -63,7 +63,7 @@
       </div>
 
       <div id="weather" class="weather is-loading">
-        <div id="wx-now" class="wx-now glass">
+        <div id="wx-now" class="wx-now glass" tabindex="0" role="button" title="Se hele dagen">
           <div class="wx-now-text"><div class="wx-now-temp">–°</div><div class="wx-now-desc">Henter vejr…</div></div>
         </div>
         <ol id="wx-days" class="wx-days glass" aria-label="Vejrudsigt"></ol>
@@ -203,6 +203,20 @@
         <button type="submit" class="btn-primary">Tilføj</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- ========== Dialog: vejret hele dagen ========== -->
+  <dialog id="weather-dialog" class="dlg dlg-wide" aria-labelledby="wx-title">
+    <div class="dlg-page">
+      <header class="dlg-head">
+        <h2 id="wx-title">Vejret</h2>
+        <button type="button" class="btn-icon" id="wx-close" aria-label="Luk">×</button>
+      </header>
+      <div id="wx-daytabs" class="wx-daytabs" role="tablist"></div>
+      <div id="wx-summary" class="wx-summary"></div>
+      <div id="wx-table-wrap" class="wx-table-wrap"><table id="wx-table" class="wx-table"></table></div>
+      <p id="wx-foot" class="hint"></p>
+    </div>
   </dialog>
 
   <!-- ========== Dialog: pokaler ========== -->

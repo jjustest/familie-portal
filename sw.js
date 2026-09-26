@@ -1,6 +1,6 @@
 // Service worker: gør appen installerbar og lader den starte uden net.
 // Hæv VERSION, når filerne ændres, så alle enheder henter de nye.
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE = `familie-${VERSION}`;
 const SHELL = [
   './',
@@ -15,6 +15,7 @@ const SHELL = [
   'js/sky.js',
   'js/sun.js',
   'js/demo.js',
+  'js/extras.js',
   'fonts/outfit-latin-wght-normal.woff2',
   'js/vendor/supabase.js',
   'manifest.webmanifest',

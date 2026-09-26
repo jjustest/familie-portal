@@ -34,9 +34,12 @@ export async function signOut() {
 // ---------- Familiemedlemmer ----------
 
 export async function loadMembers() {
-  const { data, error } = await sb.from('members').select('user_id,name,color,is_shared,sort').order('sort');
+  let { data, error } = await sb.from('members').select('user_id,name,color,is_shared,sort,role').order('sort');
+  if (error && /role/.test(error.message)) {   // før 04_point_og_info.sql er kørt
+    ({ data, error } = await sb.from('members').select('user_id,name,color,is_shared,sort').order('sort'));
+  }
   if (error) throw error;
-  return data;
+  return data.map(m => ({ ...m, role: m.role ?? (m.is_shared ? 'shared' : 'child') }));
 }
 
 // ---------- Kalender ----------
@@ -133,17 +136,106 @@ export async function deleteList(id) {
   if (error) throw error;
 }
 
+// ---------- Pokaler: opgaver, point og bonusser ----------
+
+/** Returnerer null, hvis tabellerne ikke findes endnu (04_point_og_info.sql ikke kørt) */
+export async function loadPointsData() {
+  const [c, p, r] = await Promise.all([
+    sb.from('chores').select('id,title,points,icon,sort').order('sort').order('title'),
+    sb.from('points').select('id,child_id,amount,reason,chore_id,created_by,created_at').order('created_at', { ascending: false }).limit(2000),
+    sb.from('rewards').select('id,child_id,title,cost,redeemed_at,created_at').order('cost'),
+  ]);
+  const err = c.error || p.error || r.error;
+  if (err) {
+    if (/does not exist|schema cache|Could not find/i.test(err.message)) return null;
+    throw err;
+  }
+  return { chores: c.data, points: p.data, rewards: r.data };
+}
+
+export async function givePoints(childId, amount, reason, choreId = null) {
+  const { error } = await sb.from('points').insert({ child_id: childId, amount, reason, chore_id: choreId });
+  if (error) throw error;
+}
+
+export async function deletePoints(id) {
+  const { error } = await sb.from('points').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function saveChore(ch) {
+  const row = { title: ch.title, points: ch.points, icon: ch.icon || '⭐', sort: ch.sort ?? 99 };
+  const { error } = ch.id ? await sb.from('chores').update(row).eq('id', ch.id) : await sb.from('chores').insert(row);
+  if (error) throw error;
+}
+
+export async function deleteChore(id) {
+  const { error } = await sb.from('chores').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function saveReward(rw) {
+  const row = { child_id: rw.child_id, title: rw.title, cost: rw.cost };
+  const { error } = rw.id ? await sb.from('rewards').update(row).eq('id', rw.id) : await sb.from('rewards').insert(row);
+  if (error) throw error;
+}
+
+export async function deleteReward(id) {
+  const { error } = await sb.from('rewards').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** Indløs: træk pointene fra og markér bonussen som indløst */
+export async function redeemReward(rw) {
+  const { error: e1 } = await sb.from('points').insert({ child_id: rw.child_id, amount: -rw.cost, reason: `Bonus indløst: ${rw.title}` });
+  if (e1) throw e1;
+  const { error: e2 } = await sb.from('rewards').update({ redeemed_at: new Date().toISOString() }).eq('id', rw.id);
+  if (e2) throw e2;
+}
+
+// ---------- Info ----------
+
+export async function loadInfos() {
+  const { data, error } = await sb.from('infos')
+    .select('id,title,icon,category,body,url,username,secret,phone,audience,sort,updated_at')
+    .order('category').order('sort').order('title');
+  if (error) {
+    if (/does not exist|schema cache|Could not find/i.test(error.message)) return null;
+    throw error;
+  }
+  return data;
+}
+
+export async function saveInfo(inf) {
+  const row = {
+    title: inf.title, icon: inf.icon || 'ℹ️', category: inf.category || 'Andet',
+    body: inf.body || null, url: inf.url || null, username: inf.username || null,
+    secret: inf.secret || null, phone: inf.phone || null, audience: inf.audience || 'alle',
+  };
+  const { error } = inf.id ? await sb.from('infos').update(row).eq('id', inf.id) : await sb.from('infos').insert(row);
+  if (error) throw error;
+}
+
+export async function deleteInfo(id) {
+  const { error } = await sb.from('infos').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ---------- Realtid ----------
 
 let channel = null;
 
 /** Kalder onEvents/onLists når noget ændres — også fra andre enheder. */
-export function subscribe({ onEvents, onLists, onStatus }) {
+export function subscribe({ onEvents, onLists, onPoints, onInfos, onStatus }) {
   unsubscribe();
   channel = sb.channel('familie')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => onEvents())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, () => onLists())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'list_items' }, () => onLists())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'points' }, () => onPoints?.())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rewards' }, () => onPoints?.())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chores' }, () => onPoints?.())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'infos' }, () => onInfos?.())
     .subscribe(status => onStatus?.(status));
 }
 

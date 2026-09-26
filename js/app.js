@@ -4,6 +4,7 @@ import { weatherIcon, DESCRIPTIONS } from './icons.js';
 import * as realDb from './db.js';
 import { updateSky, sunInfo, isNight } from './sky.js';
 import { createDemoApi } from './demo.js';
+import { initExtras, trophyCardHTML, hasTrophyCard, openPoints, openInfo, refreshPoints, refreshInfos } from './extras.js';
 import {
   addDays, dateKey, esc, fmt, fromKey, isoWeek, store, timeHM,
 } from './util.js';
@@ -18,6 +19,8 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const state = {
   source: store.get('weatherSource', CONFIG.weather.defaultSource),
   weekOffset: 0,
+  pointsData: undefined,  // pokaler (null = ikke sat op i databasen)
+  infos: undefined,       // info-kort (null = ikke sat op)
   onlyMine: store.get('onlyMine', false),   // vis kun aftaler, hvor jeg er markeret          // 0 = i dag + 6 dage frem, 1 = de næste 7 osv.
   weather: null,
   session: null,
@@ -638,8 +641,8 @@ function renderLists() {
   const focused = document.activeElement?.closest?.('[data-list]')?.dataset.list;
   const focusedValue = focused ? document.activeElement.value : '';
 
-  $('#lists').style.setProperty('--lists', Math.max(1, state.lists.length));
-  $('#lists').innerHTML = state.lists.map(list => {
+  $('#lists').style.setProperty('--lists', Math.max(1, state.lists.length + (hasTrophyCard() ? 1 : 0)));
+  $('#lists').innerHTML = trophyCardHTML() + state.lists.map(list => {
     const open = list.items.filter(i => !i.done);
     const done = list.items.filter(i => i.done);
     return `
@@ -815,9 +818,11 @@ async function afterLogin(session) {
   db.subscribe({
     onEvents: () => refreshEvents(),
     onLists: () => refreshLists(),
+    onPoints: () => refreshPoints(),
+    onInfos: () => refreshInfos(),
     onStatus: s => $('#account').classList.toggle('is-live', s === 'SUBSCRIBED'),
   });
-  await Promise.all([refreshEvents(), refreshLists()]);
+  await Promise.all([refreshEvents(), refreshLists(), refreshPoints(), refreshInfos()]);
 }
 
 function afterLogout() {
@@ -826,6 +831,8 @@ function afterLogout() {
   state.me = null;
   state.events = [];
   state.lists = [];
+  state.pointsData = undefined;
+  state.infos = undefined;
   for (const k of ['cache:events', 'cache:lists', 'cache:members']) store.set(k, null);
   state.members = [];
   renderCalendar();
@@ -902,7 +909,7 @@ function initKiosk() {
   window.addEventListener('online', () => { refreshEvents(); refreshLists(); });
 
   // Sikkerhedsnet: hent alt hvert 10. minut, hvis realtid er faldet ud
-  setInterval(() => { refreshEvents(); refreshLists(); }, 10 * 60e3);
+  setInterval(() => { refreshEvents(); refreshLists(); refreshPoints(); refreshInfos(); }, 10 * 60e3);
 }
 
 function registerSW() {
@@ -928,6 +935,16 @@ function openMenu() {
     ${listItems}
     <button type="button" class="menu-item" data-menu="new-list">
       <span class="mi-icon">📝</span><span>Ny liste</span>
+    </button>
+    <div class="menu-group">Familien</div>
+    <button type="button" class="menu-item" data-menu="points">
+      <span class="mi-icon">🏆</span><span>Pokaler<small>Point og bonusser</small></span>
+    </button>
+    ${state.me?.role === 'parent' ? `<button type="button" class="menu-item" data-menu="give">
+      <span class="mi-icon">⭐</span><span>Giv point</span>
+    </button>` : ''}
+    <button type="button" class="menu-item" data-menu="info">
+      <span class="mi-icon">ℹ️</span><span>Info<small>Telefonnumre, logins m.m.</small></span>
     </button>
     <div class="menu-group">Gå til</div>
     <button type="button" class="menu-item" data-menu="goto" data-target=".week">
@@ -958,6 +975,7 @@ function openItemDialog(listId) {
 function initMenu() {
   const dlg = $('#menu-dialog');
   $('#menu-btn').addEventListener('click', openMenu);
+  $('#menu-btn-desk').addEventListener('click', openMenu);
   // luk ved tryk udenfor
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
   $('#menu-list').addEventListener('click', e => {
@@ -970,6 +988,9 @@ function initMenu() {
       case 'new-list': openListDialog(); break;
       case 'goto': $(b.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
       case 'account': $('#account').click(); break;
+      case 'points': openPoints('score'); break;
+      case 'give': openPoints('give'); break;
+      case 'info': openInfo(); break;
     }
   });
 
@@ -1001,6 +1022,7 @@ startClock();
 initWeather();
 initCalendar();
 initLists();
+initExtras({ state, db, $, esc, toast, fail, member, personColor, fmt, timeHM, renderLists });
 initAuth();
 initMenu();
 initKiosk();

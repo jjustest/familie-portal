@@ -115,6 +115,7 @@
       </div>
       <div id="wx-credit" class="wx-credit"></div>
       <span class="spacer"></span>
+      <button id="menu-btn-desk" class="account menu-desk" type="button">☰ Menu</button>
       <span id="location" class="loc"></span>
       <button id="account" class="account" type="button" hidden aria-label="Konto">
         <span class="dot"></span><span class="account-name"></span>
@@ -196,6 +197,59 @@
         <span class="spacer"></span>
         <button type="button" data-action="cancel" class="btn-text">Luk</button>
         <button type="submit" class="btn-primary">Tilføj</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ========== Dialog: pokaler ========== -->
+  <dialog id="points-dialog" class="dlg dlg-wide" aria-labelledby="points-title">
+    <div class="dlg-page">
+      <header class="dlg-head">
+        <h2 id="points-title">🏆 Pokaler</h2>
+        <button type="button" class="btn-icon" id="points-close" aria-label="Luk">×</button>
+      </header>
+      <div id="points-body"></div>
+    </div>
+  </dialog>
+
+  <!-- ========== Dialog: info ========== -->
+  <dialog id="info-dialog" class="dlg dlg-wide" aria-labelledby="info-title">
+    <div class="dlg-page">
+      <header class="dlg-head">
+        <h2 id="info-title">ℹ️ Info</h2>
+        <button type="button" class="btn-primary" id="info-new" hidden>+ Ny info</button>
+        <button type="button" class="btn-icon" id="info-close" aria-label="Luk">×</button>
+      </header>
+      <input type="search" id="info-search" class="search" placeholder="Søg…" autocomplete="off">
+      <div id="info-list"></div>
+    </div>
+  </dialog>
+
+  <!-- ========== Dialog: ret info ========== -->
+  <dialog id="info-edit-dialog" class="dlg">
+    <form method="dialog" class="dlg-form" autocomplete="off">
+      <h2>Ny info</h2>
+      <label class="icon-field">Ikon <input name="icon" maxlength="8"></label>
+      <label class="name-field">Titel <input name="title" required maxlength="80" placeholder="fx Netflix"></label>
+      <label class="full">Kategori <input name="category" list="info-categories" maxlength="40" placeholder="fx Streaming, Telefonnumre, Skole"></label>
+      <datalist id="info-categories"></datalist>
+      <fieldset class="full people">
+        <legend>Hvem må se det?</legend>
+        <div class="chips">
+          <label class="chip" style="--chip:#8fd0ff"><input type="radio" name="audience" value="alle" checked><span>Alle</span></label>
+          <label class="chip" style="--chip:#f472b6"><input type="radio" name="audience" value="forældre"><span>Kun forældre</span></label>
+        </div>
+      </fieldset>
+      <label>Telefon <input name="phone" type="tel" maxlength="40"></label>
+      <label>Link <input name="url" maxlength="300" placeholder="fx netflix.com"></label>
+      <label>Brugernavn <input name="username" maxlength="120"></label>
+      <label>Kode <input name="secret" maxlength="200" autocomplete="new-password"></label>
+      <label class="full">Note <textarea name="body" rows="3" maxlength="2000"></textarea></label>
+      <div class="dlg-actions full">
+        <button type="button" data-action="delete" class="btn-danger" hidden>Slet</button>
+        <span class="spacer"></span>
+        <button type="button" data-action="cancel" class="btn-text">Annuller</button>
+        <button type="submit" class="btn-primary">Gem</button>
       </div>
     </form>
   </dialog>

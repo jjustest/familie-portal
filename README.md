@@ -19,6 +19,8 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 | `supabase/01_schema.sql` | Tabeller, sikkerhedsregler (RLS) og realtid. Køres i Supabase → SQL Editor |
 | `supabase/02_members.sql` | Knytter brugerkonti til familien (navn, farve) |
 | `supabase/03_personer.sql` | Flere personer pr. aftale + "Mine aftaler" |
+| `supabase/04_point_og_info.sql` | Roller (forælder/barn), pokaler, point, bonusser og Info-kort |
+| `js/extras.js` | Pokaler og Info (visning og dialoger) |
 | `js/app.js` | Ur, visning, ugeskift, lister, skærmlås-forhindring, fuld skærm |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Gør appen installerbar (PWA) |
 
@@ -28,6 +30,7 @@ Start Apache i XAMPP og åbn <http://localhost/info_app/>.
 3. Authentication → Users → **Add user** for hver person + én fælles konto til infoskærmen (sæt "Auto Confirm User").
 4. Ret e-mails/navne/farver i `supabase/02_members.sql` og kør den.
 5. Kør `supabase/03_personer.sql`.
+6. Kør `supabase/04_point_og_info.sql` (sætter Far og Mor som forældre).
 
 Kun konti i tabellen `members` kan se eller ændre noget. Private aftaler og personlige lister ses kun af ejeren.
 

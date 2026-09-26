@@ -677,6 +677,121 @@ body:not(.signed-out) .login { display: none; }
 .seg button.on { background: rgba(255, 255, 255, .9); color: #0b1733; }
 .next-meta .dot + .dot, .today-who .dot + .dot { margin-left: -3px; }
 
+/* ================= Pokaler ================= */
+.trophy-card { cursor: pointer; }
+.trophy-card .list-head h2 { flex: 1; }
+.trophy-give { font-size: .82rem; height: 32px; }
+.trophies { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; flex: 1; min-height: 0; align-content: start; }
+.trophy {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  background: var(--card-in); border-radius: 14px; padding: 8px 8px 10px;
+  border: 1px solid transparent; min-width: 0;
+}
+.trophy.is-leader { border-color: color-mix(in srgb, var(--kid) 55%, transparent); background: color-mix(in srgb, var(--kid) 10%, transparent); }
+.cup { width: 3.2rem; height: 3.2rem; }
+.cup-body, .cup-stem, .cup-base { fill: var(--cup); }
+.cup-handle { fill: none; stroke: var(--cup); stroke-width: 3; stroke-linecap: round; }
+.cup-shine { fill: none; stroke: rgba(255, 255, 255, .45); stroke-width: 2.5; stroke-linecap: round; }
+.crown { fill: #ffd479; }
+.trophy.is-leader .cup { animation: bounce 2.4s ease-in-out infinite; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.trophy-name { font-weight: 600; margin-top: 2px; }
+.trophy-points { font-size: 1.6rem; font-weight: 300; line-height: 1.1; }
+.trophy-points small { font-size: .75rem; color: var(--muted); }
+.trophy-earned { font-size: .75rem; color: var(--faint); }
+.bar { width: 100%; height: 7px; border-radius: 6px; background: rgba(255, 255, 255, .1); overflow: hidden; margin-top: 6px; }
+.bar i { display: block; height: 100%; border-radius: 6px; background: var(--kid, var(--accent)); transition: width .6s ease; }
+.bar.ready i { background: linear-gradient(90deg, #ffd479, #ffb347); animation: glowbar 1.6s ease-in-out infinite; }
+@keyframes glowbar { 50% { filter: brightness(1.3); } }
+.bar-label { font-size: .72rem; color: var(--muted); margin-top: 4px; line-height: 1.2; }
+.bar-label.ready { color: var(--today); }
+
+.trophies.big { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 8px; }
+.trophies.big .cup { width: 5rem; height: 5rem; }
+.trophies.big .trophy-points { font-size: 2.4rem; }
+.reward-list { width: 100%; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.reward-list li { display: flex; align-items: center; gap: 8px; font-size: .85rem; padding: 4px 6px; border-radius: 8px; }
+.reward-list li span { flex: 1; min-width: 0; }
+.reward-list li.ready { background: rgba(255, 212, 121, .12); color: var(--today); }
+.btn-sm { min-height: 28px; padding: 0 10px; font-size: .8rem; }
+
+.history li { display: flex; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.history li:last-child { border-bottom: 0; }
+.h-who { font-weight: 600; width: 4.5em; flex: none; }
+.h-reason { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-when { color: var(--faint); font-size: .78rem; }
+.h-amt { color: var(--ok); min-width: 3em; text-align: right; }
+.h-amt.neg { color: var(--danger); }
+.history .item-del { opacity: .6; }
+
+.chore-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.chore {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 8px; border-radius: 14px; border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, .05); color: var(--text);
+}
+.chore:hover { background: rgba(255, 255, 255, .1); }
+.chore:disabled { opacity: .5; }
+.chore-icon { font-size: 1.6rem; }
+.chore-title { font-size: .88rem; }
+.chore b { color: var(--ok); }
+.give-status { min-height: 1.3em; color: var(--ok); margin: 10px 0 0; font-weight: 500; }
+
+.inline-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.inline-form input, .inline-form select {
+  flex: 1 1 120px; min-width: 0; font: inherit; color: var(--text);
+  background: rgba(255, 255, 255, .07); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 12px; min-height: 42px;
+}
+.inline-form input[type=number] { flex: 0 1 100px; }
+.inline-form .w-icon { flex: 0 0 64px; text-align: center; }
+.inline-form select option { background: #14203a; }
+.setup-list li { display: flex; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); }
+.setup-list li .grow { flex: 1; min-width: 0; }
+.setup-list li small { color: var(--muted); margin-left: 6px; }
+.setup-list .item-del { opacity: .7; }
+.setup-list { margin-bottom: 10px; }
+
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
+.confetti i { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; animation: fallc linear forwards; }
+@keyframes fallc { to { top: 105%; transform: translateX(40px) rotate(720deg); } }
+
+/* ================= Store dialoger (pokaler, info) ================= */
+.dlg-wide { width: min(900px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); }
+.dlg-page { padding: 18px 22px 22px; }
+.dlg-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; position: sticky; top: -18px; }
+.dlg-head h2 { flex: 1; font-size: 1.35rem; font-weight: 500; }
+.tabs { margin-bottom: 14px; }
+.sub { font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; color: var(--faint); font-weight: 600; margin: 16px 0 8px; }
+.sub small { text-transform: none; letter-spacing: 0; color: var(--faint); font-weight: 400; margin-left: 6px; }
+.hint code { background: rgba(255, 255, 255, .08); padding: 1px 5px; border-radius: 5px; }
+
+/* ================= Info ================= */
+.search {
+  width: 100%; font: inherit; color: var(--text);
+  background: rgba(255, 255, 255, .07); border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 14px; min-height: 44px; margin-bottom: 4px;
+}
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.info-card { background: var(--card-in); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.info-card.parents { border-color: rgba(244, 114, 182, .35); }
+.info-card header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.info-card h4 { margin: 0; flex: 1; font-size: 1.05rem; font-weight: 600; }
+.info-icon { font-size: 1.4rem; }
+.badge { font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: rgba(244, 114, 182, .18); color: #f9a8d4; white-space: nowrap; }
+.field { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); }
+.f-label { width: 6.5em; flex: none; color: var(--muted); font-size: .82rem; }
+.f-val { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-val a { color: var(--accent); text-decoration: none; }
+.f-val.secret { font-family: ui-monospace, monospace; letter-spacing: .05em; }
+.f-btn { border: 0; background: rgba(255, 255, 255, .06); color: var(--muted); width: 32px; height: 30px; border-radius: 9px; flex: none; }
+.f-btn:hover { color: var(--text); background: rgba(255, 255, 255, .12); }
+.info-body { margin: 8px 0 0; white-space: pre-wrap; color: var(--muted); font-size: .9rem; }
+#info-edit-dialog .dlg-form { grid-template-columns: 1fr 1fr; }
+#info-edit-dialog .icon-field input { text-align: center; font-size: 1.3rem; }
+
+.menu-desk { color: var(--muted); }
+
 /* ================= Burger-menu (kun mobil) ================= */
 .menu-btn {
   display: none;
@@ -758,6 +873,15 @@ body:not(.signed-out) .login { display: none; }
 @media (max-width: 699px) {
   :root { --pad: 14px; --gap: 12px; }
   .menu-btn { display: grid; }
+  .menu-desk { display: none; }
+  .dlg-wide { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; margin: 0; border-radius: 0; }
+  .dlg-page { padding: max(14px, env(safe-area-inset-top)) 14px 24px; }
+  .trophies.big { grid-template-columns: 1fr 1fr; }
+  .trophies.big .cup { width: 3.6rem; height: 3.6rem; }
+  .trophies.big .trophy-points { font-size: 1.9rem; }
+  .chore-grid { grid-template-columns: 1fr 1fr; }
+  #info-edit-dialog .dlg-form { grid-template-columns: 1fr; }
+  #info-edit-dialog .icon-field, #info-edit-dialog .name-field { grid-column: 1; }
   body.signed-out .menu-btn { display: none; }
   .time-block { padding-right: 60px; }
   .top { flex-direction: column; gap: 10px; }

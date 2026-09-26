@@ -4,11 +4,11 @@
 import { addDays, dateKey, fromKey } from './util.js';
 
 export const DEMO_MEMBERS = [
-  { user_id: 'fam', name: 'Familien', color: '#6cb0ff', is_shared: true, sort: 0 },
-  { user_id: 'p1', name: 'Far', color: '#2dd4bf', is_shared: false, sort: 1 },
-  { user_id: 'p2', name: 'Mor', color: '#f472b6', is_shared: false, sort: 2 },
-  { user_id: 'p3', name: 'Emma', color: '#fb923c', is_shared: false, sort: 3 },
-  { user_id: 'p4', name: 'Oskar', color: '#a78bfa', is_shared: false, sort: 4 },
+  { user_id: 'fam', name: 'Familien', color: '#6cb0ff', is_shared: true, sort: 0, role: 'shared' },
+  { user_id: 'p1', name: 'Far', color: '#2dd4bf', is_shared: false, sort: 1, role: 'parent' },
+  { user_id: 'p2', name: 'Mor', color: '#f472b6', is_shared: false, sort: 2, role: 'parent' },
+  { user_id: 'p3', name: 'Emma', color: '#fb923c', is_shared: false, sort: 3, role: 'child' },
+  { user_id: 'p4', name: 'Oskar', color: '#a78bfa', is_shared: false, sort: 4, role: 'child' },
 ];
 
 export function demoEvents(now = new Date()) {
@@ -78,7 +78,53 @@ export function createDemoApi() {
   const clone = x => JSON.parse(JSON.stringify(x));
   const as = new URLSearchParams(location.search).get('as') || 'fam';   // ?demo&as=p3 = vis som Emma
   const session = { user: { id: as, email: `${as}@demo` } };
+  const ago = h => new Date(Date.now() - h * 3600e3).toISOString();
+  const chores = [
+    { id: 'c1', title: 'Støvsugning', points: 20, icon: '🧹', sort: 1 },
+    { id: 'c2', title: 'Opvask', points: 15, icon: '🍽️', sort: 2 },
+    { id: 'c3', title: 'Gå tur med hunden', points: 10, icon: '🐕', sort: 3 },
+    { id: 'c4', title: 'Rydde op på værelset', points: 15, icon: '🧸', sort: 4 },
+    { id: 'c5', title: 'Tage skraldet ud', points: 5, icon: '🗑️', sort: 5 },
+  ];
+  let points = [
+    { id: 'x1', child_id: 'p3', amount: 20, reason: 'Støvsugning', created_at: ago(2) },
+    { id: 'x2', child_id: 'p4', amount: 15, reason: 'Opvask', created_at: ago(5) },
+    { id: 'x3', child_id: 'p3', amount: 100, reason: 'Hjalp med flytning', created_at: ago(30) },
+    { id: 'x4', child_id: 'p4', amount: 60, reason: 'Gå tur med hunden ×6', created_at: ago(50) },
+    { id: 'x5', child_id: 'p3', amount: 45, reason: 'Opvask ×3', created_at: ago(80) },
+  ];
+  let rewards = [
+    { id: 'r1', child_id: 'p3', title: 'Biograftur', cost: 200, redeemed_at: null },
+    { id: 'r2', child_id: 'p4', title: 'Biograftur', cost: 200, redeemed_at: null },
+    { id: 'r3', child_id: 'p4', title: 'Ekstra skærmtid', cost: 60, redeemed_at: null },
+  ];
+  let infos = [
+    { id: 'i1', title: 'Netflix', icon: '🎬', category: 'Streaming', url: 'netflix.com', username: 'familien@mail.dk', secret: 'hemmelig123', audience: 'alle' },
+    { id: 'i2', title: 'TV2 Play', icon: '📺', category: 'Streaming', url: 'play.tv2.dk', username: 'familien@mail.dk', secret: 'tv2-kode', audience: 'alle' },
+    { id: 'i3', title: 'Mormor', icon: '👵', category: 'Telefonnumre', phone: '12 34 56 78', audience: 'alle' },
+    { id: 'i4', title: 'Skolens kontor', icon: '🏫', category: 'Telefonnumre', phone: '87 65 43 21', body: 'Åbent 8–15', audience: 'alle' },
+    { id: 'i5', title: 'Router admin', icon: '🛜', category: 'Hjemmet', url: '192.168.1.1', username: 'admin', secret: 'router-kode', audience: 'forældre' },
+  ];
+  const me = DEMO_MEMBERS.find(m => m.user_id === as);
+  const parent = me?.role === 'parent';
   return {
+    loadPointsData: async () => clone({ chores, points, rewards }),
+    givePoints: async (child_id, amount, reason, chore_id = null) => { points.unshift({ id: id(), child_id, amount, reason, chore_id, created_at: new Date().toISOString() }); },
+    deletePoints: async pid => { points = points.filter(p => p.id !== pid); },
+    saveChore: async ch => { chores.push({ ...ch, id: id() }); },
+    deleteChore: async cid => { chores.splice(chores.findIndex(c => c.id === cid), 1); },
+    saveReward: async rw => { rewards.push({ ...rw, id: id(), redeemed_at: null }); },
+    deleteReward: async rid => { rewards = rewards.filter(r => r.id !== rid); },
+    redeemReward: async rw => {
+      points.unshift({ id: id(), child_id: rw.child_id, amount: -rw.cost, reason: `Bonus indløst: ${rw.title}`, created_at: new Date().toISOString() });
+      rewards.find(r => r.id === rw.id).redeemed_at = new Date().toISOString();
+    },
+    loadInfos: async () => clone(infos.filter(i => i.audience === 'alle' || parent)),
+    saveInfo: async inf => {
+      if (inf.id) Object.assign(infos.find(i => i.id === inf.id), inf);
+      else infos.push({ ...inf, id: id() });
+    },
+    deleteInfo: async iid => { infos = infos.filter(i => i.id !== iid); },
     onAuthChange: cb => setTimeout(() => cb(session), 0),
     signIn: async () => {}, signOut: async () => {},
     loadMembers: async () => clone(DEMO_MEMBERS),

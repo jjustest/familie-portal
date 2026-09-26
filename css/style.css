@@ -799,7 +799,9 @@ body:not(.signed-out) .login { display: none; }
 .chore-item b { color: var(--ok); }
 
 /* ================= Stedvælger ================= */
-.loc-switch { display: inline-flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.top-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.loc-switch { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.top-controls .src-toggle button { min-height: 30px; font-size: .8rem; padding: 3px 12px; }
 .loc-switch button {
   border: 1px solid var(--line); background: rgba(255, 255, 255, .05); color: var(--muted);
   border-radius: 999px; padding: 3px 12px; min-height: 30px; font-size: .85rem;

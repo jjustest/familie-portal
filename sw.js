@@ -1,6 +1,6 @@
 // Service worker: gør appen installerbar og lader den starte uden net.
 // Hæv VERSION, når filerne ændres, så alle enheder henter de nye.
-const VERSION = 'v11';
+const VERSION = 'v12';
 const CACHE = `familie-${VERSION}`;
 const SHELL = [
   './',

@@ -53,7 +53,13 @@
           <span class="sep">·</span>
           <span id="week-no"></span>
         </div>
-        <div id="loc-switch" class="loc-switch" role="group" aria-label="Sted"></div>
+        <div class="top-controls">
+          <div id="loc-switch" class="loc-switch" role="group" aria-label="Sted"></div>
+          <div class="src-toggle" role="group" aria-label="Vejrkilde">
+            <button type="button" data-source="dmi">DMI</button>
+            <button type="button" data-source="yr">YR</button>
+          </div>
+        </div>
       </div>
 
       <div id="weather" class="weather is-loading">
@@ -110,10 +116,6 @@
     <footer id="lists" class="lists"></footer>
 
     <div class="statusbar">
-      <div class="src-toggle" role="group" aria-label="Vejrkilde">
-        <button type="button" data-source="dmi">DMI</button>
-        <button type="button" data-source="yr">YR</button>
-      </div>
       <div id="wx-credit" class="wx-credit"></div>
       <span class="spacer"></span>
       <button id="menu-btn-desk" class="account menu-desk" type="button">☰ Menu</button>

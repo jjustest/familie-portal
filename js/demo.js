@@ -111,6 +111,7 @@ export function createDemoApi() {
     loadPointsData: async () => clone({ chores, points, rewards }),
     givePoints: async (child_id, amount, reason, chore_id = null) => { points.unshift({ id: id(), child_id, amount, reason, chore_id, created_at: new Date().toISOString() }); },
     deletePoints: async pid => { points = points.filter(p => p.id !== pid); },
+    resetPoints: async cid => { points = points.filter(p => p.child_id !== cid); },
     saveChore: async ch => { chores.push({ ...ch, id: id() }); },
     deleteChore: async cid => { chores.splice(chores.findIndex(c => c.id === cid), 1); },
     saveReward: async rw => { rewards.push({ ...rw, id: id(), redeemed_at: null }); },

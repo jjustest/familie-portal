@@ -175,6 +175,7 @@
       <p id="account-who" class="full"></p>
       <div class="dlg-actions full">
         <button type="button" data-action="logout" class="btn-danger">Log ud</button>
+        <button type="button" data-action="reset-bio" class="btn-text" id="reset-bio" hidden>Nulstil fingeraftryk</button>
         <span class="spacer"></span>
         <button type="button" data-action="cancel" class="btn-text">Luk</button>
       </div>
@@ -252,6 +253,27 @@
         <button type="submit" class="btn-primary">Gem</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- ========== Dialog: forælder-lås ========== -->
+  <dialog id="unlock-dialog" class="dlg dlg-small">
+    <div class="dlg-form">
+      <h2>🔒 Forælder</h2>
+      <p id="unlock-intro" class="full"></p>
+      <button type="button" id="unlock-bio" class="btn-primary btn-big full">👆 Brug fingeraftryk</button>
+      <details id="unlock-pw-wrap" class="full">
+        <summary>Brug kodeord i stedet</summary>
+        <form id="unlock-form" class="unlock-form" autocomplete="off">
+          <input type="password" name="password" placeholder="Dit kodeord" autocomplete="current-password" required>
+          <button type="submit" class="btn-primary">OK</button>
+        </form>
+      </details>
+      <p id="unlock-error" class="full warn" role="alert"></p>
+      <div class="dlg-actions full">
+        <span class="spacer"></span>
+        <button type="button" id="unlock-cancel" class="btn-text">Annuller</button>
+      </div>
+    </div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

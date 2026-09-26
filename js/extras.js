@@ -1,6 +1,8 @@
 // Pokaler (point-konkurrence) og Info-kort.
 // Bruges fra app.js via initExtras(ctx).
 
+import { requireParent } from './lock.js';
+
 let C; // kontekst fra app.js: { state, db, $, esc, toast, fail, member, personColor, fmt, timeHM, renderLists }
 
 // ================= Hjælpere =================
@@ -143,7 +145,7 @@ function scoreHTML(parent) {
         return `<li>
           <span class="dot" style="--dot:${k?.color ?? 'var(--muted)'}"></span>
           <span class="h-who">${C.esc(k?.name ?? '?')}</span>
-          <span class="h-reason">${C.esc(p.reason)}</span>
+          <span class="h-reason">${C.esc(p.reason)}${p.created_by && C.member(p.created_by) ? ` <small class="h-by">af ${C.esc(C.member(p.created_by).name)}</small>` : ''}</span>
           <span class="h-when">${C.fmt(new Date(p.created_at), { day: 'numeric', month: 'short' })}</span>
           <b class="h-amt ${p.amount < 0 ? 'neg' : ''}">${p.amount > 0 ? '+' : ''}${p.amount}</b>
           ${parent ? `<button type="button" class="item-del" data-del-points="${p.id}" aria-label="Fortryd">×</button>` : ''}
@@ -205,6 +207,11 @@ function setupHTML() {
       <button type="submit" class="btn-primary">Tilføj</button>
     </form>
 
+    <h3 class="sub">Nulstil point <small>Sletter al historik for barnet</small></h3>
+    <div class="reset-row">
+      ${kids().map(k => `<button type="button" class="btn-danger" data-reset="${k.user_id}">Nulstil ${C.esc(k.name)} (${balance(k.user_id)})</button>`).join('')}
+    </div>
+
     <h3 class="sub">Opgaver</h3>
     <ul class="setup-list">
       ${chores.map(ch => `<li>
@@ -220,7 +227,8 @@ function setupHTML() {
     </form>`;
 }
 
-export function openPoints(startTab = 'score') {
+export async function openPoints(startTab = 'score') {
+  if (startTab !== 'score' && !(isParent() && await requireParent())) startTab = 'score';
   tab = isParent() ? startTab : 'score';
   C.$('#points-dialog').showModal();
   renderPointsDialog();
@@ -274,7 +282,28 @@ function initPointsDialog() {
 
   C.$('#points-body').addEventListener('click', async e => {
     const t = e.target.closest('[data-tab]');
-    if (t) { tab = t.dataset.tab; renderPointsDialog(); return; }
+    if (t) {
+      if (t.dataset.tab !== 'score' && !(await requireParent())) return;
+      tab = t.dataset.tab; renderPointsDialog(); return;
+    }
+
+    // Alle handlinger herunder er forælder-handlinger
+    if (e.target.closest('[data-chore],[data-redeem],[data-del-points],[data-del-reward],[data-del-chore],[data-reset]')
+        && !(await requireParent())) return;
+
+    const rs = e.target.closest('[data-reset]');
+    if (rs) {
+      if (!rs.classList.contains('confirm')) {
+        rs.classList.add('confirm');
+        rs.textContent = `Tryk igen – alle ${C.member(rs.dataset.reset)?.name}s point slettes`;
+        return;
+      }
+      try {
+        await C.db.resetPoints(rs.dataset.reset);
+        await afterChange(`${C.member(rs.dataset.reset)?.name}s point er nulstillet`);
+      } catch (err) { C.fail(err, 'Kunne ikke nulstille'); }
+      return;
+    }
 
     const ch = e.target.closest('[data-chore]');
     if (ch && giveTo) {
@@ -312,6 +341,7 @@ function initPointsDialog() {
   C.$('#points-body').addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.target;
+    if (!(await requireParent())) return;
     try {
       if (f.id === 'custom-points' && giveTo) {
         const amount = parseInt(f.amount.value, 10);
@@ -348,6 +378,7 @@ export async function refreshPoints() {
 // ================= Info =================
 
 let infoQuery = '';
+let infoUnlocked = false;   // forælder har bekræftet (fingeraftryk/kodeord)
 
 function infoMatches(i, q) {
   if (!q) return true;
@@ -357,8 +388,9 @@ function infoMatches(i, q) {
 function renderInfoDialog() {
   const dlg = C.$('#info-dialog');
   if (!dlg.open) return;
-  C.$('#info-new').hidden = !isParent();
-  const list = C.state.infos;
+  const canEdit = isParent() && infoUnlocked;
+  C.$('#info-new').hidden = !canEdit;
+  const list = C.state.infos && !canEdit ? C.state.infos.filter(i => i.audience !== 'forældre') : C.state.infos;
   const el = C.$('#info-list');
   if (list === null) {
     el.innerHTML = `<p class="hint">Info er ikke slået til endnu. Kør <code>supabase/04_point_og_info.sql</code> i Supabase.</p>`;
@@ -384,7 +416,7 @@ function renderInfoDialog() {
             <span class="info-icon">${C.esc(i.icon)}</span>
             <h4>${C.esc(i.title)}</h4>
             ${i.audience === 'forældre' ? '<span class="badge">Kun forældre</span>' : ''}
-            ${isParent() ? `<button type="button" class="list-menu" data-edit-info="${i.id}" aria-label="Ret">✎</button>` : ''}
+            ${canEdit ? `<button type="button" class="list-menu" data-edit-info="${i.id}" aria-label="Ret">✎</button>` : ''}
           </header>
           ${i.phone ? field('Telefon', `<a href="tel:${C.esc(i.phone.replace(/\s/g, ''))}">${C.esc(i.phone)}</a>`, i.phone) : ''}
           ${i.url ? field('Link', `<a href="${C.esc(safeUrl(i.url))}" target="_blank" rel="noopener">${C.esc(i.url.replace(/^https?:\/\//, ''))}</a>`, i.url) : ''}
@@ -416,7 +448,8 @@ async function copy(text) {
   }
 }
 
-export function openInfo() {
+export async function openInfo() {
+  infoUnlocked = isParent() ? await requireParent() : false;
   infoQuery = '';
   C.$('#info-search').value = '';
   C.$('#info-dialog').showModal();
@@ -424,7 +457,8 @@ export function openInfo() {
   refreshInfos();
 }
 
-function openInfoEdit(info = null) {
+async function openInfoEdit(info = null) {
+  if (!(await requireParent())) return;
   const dlg = C.$('#info-edit-dialog');
   const f = dlg.querySelector('form');
   f.reset();
@@ -474,6 +508,7 @@ function initInfo() {
   edlg.querySelector('[data-action=delete]').addEventListener('click', async e => {
     const btn = e.currentTarget;
     if (!btn.classList.contains('confirm')) { btn.classList.add('confirm'); btn.textContent = 'Tryk igen for at slette'; return; }
+    if (!(await requireParent())) return;
     try { await C.db.deleteInfo(f.dataset.id); edlg.close(); await refreshInfos(); }
     catch (err) { C.fail(err, 'Kunne ikke slette'); }
   });
@@ -481,6 +516,7 @@ function initInfo() {
     e.preventDefault();
     const data = { id: f.dataset.id || null, audience: f.audience.value };
     for (const k of ['icon', 'title', 'category', 'phone', 'url', 'username', 'secret', 'body']) data[k] = f[k].value.trim();
+    if (!(await requireParent())) return;
     try { await C.db.saveInfo(data); edlg.close(); await refreshInfos(); }
     catch (err) { C.fail(err, 'Kunne ikke gemme'); }
   });

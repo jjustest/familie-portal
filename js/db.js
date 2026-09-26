@@ -163,6 +163,11 @@ export async function deletePoints(id) {
   if (error) throw error;
 }
 
+export async function resetPoints(childId) {
+  const { error } = await sb.from('points').delete().eq('child_id', childId);
+  if (error) throw error;
+}
+
 export async function saveChore(ch) {
   const row = { title: ch.title, points: ch.points, icon: ch.icon || '⭐', sort: ch.sort ?? 99 };
   const { error } = ch.id ? await sb.from('chores').update(row).eq('id', ch.id) : await sb.from('chores').insert(row);

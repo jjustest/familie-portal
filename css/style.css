@@ -792,6 +792,17 @@ body:not(.signed-out) .login { display: none; }
 
 .menu-desk { color: var(--muted); }
 
+/* ================= Forælder-lås ================= */
+#unlock-dialog details summary { cursor: pointer; color: var(--muted); font-size: .9rem; padding: 4px 0; }
+.unlock-form { display: flex; gap: 8px; margin-top: 8px; }
+.unlock-form input {
+  flex: 1; min-width: 0; font: inherit; color: var(--text);
+  background: rgba(255, 255, 255, .07); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; min-height: 44px;
+}
+#unlock-error:empty { display: none; }
+.reset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.h-by { color: var(--faint); font-size: .75rem; }
+
 /* ================= Burger-menu (kun mobil) ================= */
 .menu-btn {
   display: none;

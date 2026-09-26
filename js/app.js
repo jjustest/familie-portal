@@ -4,6 +4,7 @@ import { weatherIcon, DESCRIPTIONS } from './icons.js';
 import * as realDb from './db.js';
 import { updateSky, sunInfo, isNight } from './sky.js';
 import { createDemoApi } from './demo.js';
+import { initLock, resetFingerprint } from './lock.js';
 import { initExtras, trophyCardHTML, hasTrophyCard, openPoints, openInfo, refreshPoints, refreshInfos } from './extras.js';
 import {
   addDays, dateKey, esc, fmt, fromKey, isoWeek, store, timeHM,
@@ -866,10 +867,16 @@ function initAuth() {
   $('#login-out').addEventListener('click', logout);
   $('#account').addEventListener('click', () => {
     $('#account-who').textContent = `${state.me?.name ?? ''} · ${state.session?.user.email ?? ''}`;
+    $('#reset-bio').hidden = state.me?.role !== 'parent';
     $('#account-dialog').showModal();
   });
   $('#account-dialog [data-action=cancel]').addEventListener('click', () => $('#account-dialog').close());
   $('#account-dialog [data-action=logout]').addEventListener('click', logout);
+  $('#reset-bio').addEventListener('click', () => {
+    resetFingerprint();
+    $('#account-dialog').close();
+    toast('Fingeraftryk nulstillet – det sættes op igen næste gang', 'ok');
+  });
 
   let current = null;
   db.onAuthChange(session => {
@@ -1022,6 +1029,7 @@ startClock();
 initWeather();
 initCalendar();
 initLists();
+initLock({ state, db, $, toast });
 initExtras({ state, db, $, esc, toast, fail, member, personColor, fmt, timeHM, renderLists });
 initAuth();
 initMenu();
